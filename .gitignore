@@ -1,0 +1,17 @@
+# NEVER commit generated audit reports — they contain real personal data
+footprint-report-*.html
+*-report-*.html
+reports/
+*.report.html
+
+# Scratch / working files
+scratchpad/
+*.tmp
+*.bak
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
