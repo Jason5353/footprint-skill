@@ -72,12 +72,15 @@ or just:
 /footprint search for me
 ```
 
+**It's one-shot.** A single invocation runs the whole thing — every applicable source, the full developer pivot chain (pivoting recursively until nothing new turns up), and the phishing analysis — and hands back one complete report. You don't run it repeatedly to build up coverage; the first report *is* the full picture.
+
 Claude will:
 
 1. Confirm no secrets will be stored, and anchor the subject's identity so it audits the right person.
-2. Run the source checks in parallel (and, for technical subjects, the developer pivot chain).
-3. Produce a single styled HTML report saved to the working directory, including an interactive connection graph.
-4. Offer to drill deeper on any area.
+2. Run every applicable source check in aggressive parallel (and, for technical subjects, the developer pivot chain end-to-end).
+3. Complete the spear-phishing attack-surface analysis from the findings.
+4. Produce a single styled HTML report saved to the working directory, including an interactive connection graph.
+5. Optionally, as a follow-up, zoom in on one area or set up periodic **re-auditing for monitoring** — i.e. re-running later to catch *changes*, not to finish an unfinished report.
 
 ### Example prompts
 

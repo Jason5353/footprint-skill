@@ -340,10 +340,10 @@ This is the exact sequence that produced the deepest results in live audits. The
 The chain is recursive: Steps 2 and 5 often surface NEW emails, usernames, or colleagues — feed them back into Step 1/3/4 until it stops producing new nodes.
 
 ════════════════════════════════════════
-SECOND-RUN TECHNIQUES (for deeper investigation)
+DEEP-DIVE TECHNIQUES (run these in the SAME pass — not a later run)
 ════════════════════════════════════════
 
-These are checks to do when a first pass has been completed and you want to go further:
+This skill is ONE-SHOT: a single invocation runs everything — the core sources above, the developer pivot chain, and every deep-dive technique below — and produces one complete report. Do NOT defer these to a "second run"; there is no second run. Run every technique that could apply to the subject during this pass, and keep pivoting recursively (new emails/handles/colleagues feed back into earlier steps) until the techniques stop producing new findings. The "SR" labels below are just stable identifiers for each technique, not an ordering or a separate phase.
 
 ## SR1 — Family / Co-resident Exposure
 LESSON FROM AUDIT: The subject's partner was listed as co-director on Companies House, exposing her name, DOB, and home address simultaneously. Always check whether co-directors, co-signatories, or other people at the same address are also exposed.
@@ -675,13 +675,16 @@ TONE AND STYLE
 BEGINNING THE AUDIT
 ════════════════════════════════════════
 
+This is a ONE-SHOT skill. A single invocation must produce the complete, deep audit — one report containing everything. Do not stop after a shallow first pass and wait to be asked for more; run every applicable source, the full developer pivot chain, and every deep-dive technique in this same invocation, pivoting recursively until you stop finding new data. The only reason to come back later is scheduled monitoring (re-auditing for CHANGES over time), never to finish an incomplete first report.
+
 When invoked:
 1. Briefly explain what you'll do and confirm no secrets will be stored.
-2. Ask for intake info (or search for it if the user says "search for me"). Name + town is enough to start — see MINIMUM VIABLE INPUT.
+2. Ask for intake info (or search for it if the user says "search for me"). Name + town is enough to start — see MINIMUM VIABLE INPUT. Ask for intake in ONE message; don't drip-feed questions across turns.
 3. Anchor the identity first (Companies House name+town, or a known email/username) so you're auditing the right person — see IDENTITY ANCHORING.
-4. Run ALL searches in parallel — don't do them sequentially waiting for confirmation.
-5. If the subject is technical, run THE DEVELOPER PIVOT CHAIN in order — it's the highest-yield path and works from a single email.
-6. Present a single comprehensive HTML report at the end, saved to disk (filename: `footprint-report-<subject-slug>.html`).
-7. Offer to drill deeper on any specific area.
+4. Run ALL searches in aggressive parallel — the full UK + global source list, and every deep-dive (SR) technique that could apply. Don't do them sequentially waiting for confirmation, and don't defer any to a hypothetical later run.
+5. If the subject is technical, run THE DEVELOPER PIVOT CHAIN end-to-end, feeding new emails/handles/colleagues back in until it stops producing new nodes.
+6. Complete the spear-phishing attack-surface analysis from the findings.
+7. Present a single comprehensive HTML report at the end, saved to disk (filename: `footprint-report-<subject-slug>.html`).
+8. Then — and only as a courtesy — offer to zoom in on any one area or to set up periodic re-auditing for monitoring. The delivered report is already the full picture, not a teaser.
 
 CRITICAL — every "EXAMPLE" note in this skill is a generic, illustrative pattern, not a real person. They show what a technique yields and what a good finding looks like. When you run this skill, replace every placeholder (USERNAME, EMAIL, Full Name, town, company number, COMPANY NAME) with the CURRENT subject's real data, and report only what you actually find for that subject. If an example pattern doesn't apply to your subject, run the technique anyway with their data and report the real result.
