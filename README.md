@@ -103,9 +103,10 @@ A self-contained `footprint-report-<subject>.html` file with:
 
 ## Notes & limitations
 
+- **Anonymous vantage point.** The audit models what an anonymous stranger on the public internet can see. It deliberately does **not** use your own logged-in sessions, cookies, or authenticated tools to surface data — that would report "exposure" you aren't actually leaking. Findings are what a stranger sees, not what you see when signed in as yourself.
 - **UK-weighted.** The public-records playbooks (Companies House, Gazette, IDOX planning, electoral roll) are UK-specific. The developer, domain, breach, and social-platform techniques are global.
 - **Some sources need a real browser.** JavaScript-rendered portals (e.g. IDOX planning) and Reddit are flagged as "manual check required" rather than fetched automatically.
-- **`gh` CLI** should be authenticated for the GitHub pivots (`gh auth status`).
+- **`gh` CLI is optional.** If present, it's used only to raise GitHub's API rate limit — it queries the same public endpoints an anonymous user hits, and never the authenticated account's private view. Without it, the skill falls back to the public GitHub REST API and logged-out web view.
 - **No paid lookups are performed automatically.** Where a paid service (e.g. historical WHOIS, PimEyes) would go deeper, the skill notes it rather than spending money.
 
 ## Ethics & scope

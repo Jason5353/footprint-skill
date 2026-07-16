@@ -18,6 +18,16 @@ OBJECTIVE
 - Surface: home address, employer, professional history, social accounts, public accounts, co-located family members, domain ownership, and breach exposure.
 - Provide clear, prioritized, source-cited remediation steps.
 
+════════════════════════════════════════
+VANTAGE POINT — THE GOLDEN RULE OF THIS AUDIT
+════════════════════════════════════════
+Everything you report must reflect what an ANONYMOUS STRANGER on the public internet can see. You are modelling an external attacker with NO special access — not the subject's own logged-in view. This is the whole point of OSINT; get it wrong and the report is worthless.
+
+- **Never use the subject's own authenticated access** — no logged-in sessions, cookies, saved logins, password manager, email inbox, browser history, or any privileged vantage — to surface data. That reports "exposure" the subject isn't actually leaking to the world.
+- **A tool being logged in ≠ permission to use its authenticated view.** The most common trap is the `gh` CLI signed in AS THE SUBJECT. Use it ONLY to hit public, unauthenticated-equivalent endpoints (searches, `/users/USERNAME`); treat auth purely as a rate-limit convenience. NEVER call endpoints that return the logged-in account's private view (`gh api /user`, private repos, private gists, notifications). Same for any other authenticated tool.
+- **The logged-out web view is the source of truth.** When a finding might depend on being logged in, re-verify it as an anonymous user (incognito / logged-out / a raw public URL / a fresh unauthenticated API call). If it only appears when authenticated, it is NOT public exposure — exclude it, or label it explicitly "only visible when logged in, not public."
+- **Do NOT begin the audit by inspecting the user's own logged-in tools or accounts.** Start from public search on the subject's name/handle/email. Checking your own `gh auth status` is not step one — and if you mention auth at all, frame it as an optional rate-limit helper, not a data source.
+
 CONSTRAINTS & SAFETY RULES
 - Do not request or store passwords, API keys, tokens, or other secrets. If the user accidentally shares them, instruct them to rotate immediately.
 - You MAY and SHOULD perform web searches and page fetches yourself — do not just guide the user; actively investigate.
@@ -54,7 +64,7 @@ OPERATIONAL REALITY — TOOLS & KNOWN BLOCKERS
 ════════════════════════════════════════
 Learned from live runs. Read before starting so you don't waste passes on blocked routes.
 
-- **`gh` CLI must be authenticated.** The commit-email and PR-history pivots use `gh api "https://api.github.com/..."`. Verify with `gh auth status` first. Unauthenticated calls hit a 60/hr rate limit and may fail on search endpoints. Authenticated = 5,000/hr.
+- **`gh` CLI: auth is a rate-limit convenience ONLY — never a data source (see the GOLDEN RULE).** The commit-email and PR-history pivots use PUBLIC endpoints (`search/commits`, `search/issues`, `/users/USERNAME`) that return the SAME public data whether or not you're logged in; auth just raises the limit (60/hr → 5,000/hr). Do NOT open the audit by checking `gh auth status`, and do NOT call authenticated-only endpoints (`gh api /user`, private repos/gists, notifications) — those expose the logged-in account's private view and would report exposure that isn't actually public. If `gh` is unavailable or unauthenticated, just use the public REST API over WebFetch (`https://api.github.com/users/USERNAME`, etc.) or the logged-out github.com web view — the results are equivalent for OSINT purposes.
 - **WebFetch works directly on JSON APIs.** You do NOT need a browser for: the HN Firebase API (`hacker-news.firebaseio.com/v0/...`), the Keybase lookup API (`keybase.io/USERNAME`), Companies House pages, WHOIS pages. Fetch the raw endpoint and parse.
 - **Reddit is BLOCKED to the crawler.** Both `WebSearch` with `site:reddit.com` and `WebFetch` on `reddit.com`/`www.reddit.com` fail. Workarounds: (a) confirm the account exists via a Keybase proof (r/KeybaseProofs), (b) try `old.reddit.com` or a `.json` suffix which sometimes works, (c) Google-cache the profile, (d) otherwise flag as "manual browser check required" in the report and add it to the action plan. Do not keep retrying reddit.com — it will not work.
 - **HN: use the Algolia search API, not `site:` search.** `site:news.ycombinator.com "term"` is unreliable and returns front-page noise. Instead: `https://hn.algolia.com/api/v1/search?query=TERM` (by relevance) or `?query=TERM&tags=comment`. To enumerate one user's whole history, get `hacker-news.firebaseio.com/v0/user/USERNAME.json` then fetch each item ID. See SR16.
@@ -678,7 +688,7 @@ BEGINNING THE AUDIT
 This is a ONE-SHOT skill. A single invocation must produce the complete, deep audit — one report containing everything. Do not stop after a shallow first pass and wait to be asked for more; run every applicable source, the full developer pivot chain, and every deep-dive technique in this same invocation, pivoting recursively until you stop finding new data. The only reason to come back later is scheduled monitoring (re-auditing for CHANGES over time), never to finish an incomplete first report.
 
 When invoked:
-1. Briefly explain what you'll do and confirm no secrets will be stored.
+1. Briefly explain what you'll do, confirm no secrets will be stored, and state the vantage point: you will only report what an anonymous stranger can see from the public internet (see the GOLDEN RULE). Your FIRST investigative action is a public search on the subject — not an inspection of the user's own machine, logins, or `gh`/CLI auth.
 2. Ask for intake info (or search for it if the user says "search for me"). Name + town is enough to start — see MINIMUM VIABLE INPUT. Ask for intake in ONE message; don't drip-feed questions across turns.
 3. Anchor the identity first (Companies House name+town, or a known email/username) so you're auditing the right person — see IDENTITY ANCHORING.
 4. Run ALL searches in aggressive parallel — the full UK + global source list, and every deep-dive (SR) technique that could apply. Don't do them sequentially waiting for confirmation, and don't defer any to a hypothetical later run.
