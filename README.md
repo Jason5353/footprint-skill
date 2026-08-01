@@ -18,11 +18,12 @@ It was built to run **self-audits** and drive **security-awareness exercises** �
 | **Work & employment history** | LinkedIn, GitHub PR/commit history across employer orgs, company records |
 | **Developer footprint** | GitHub (commit-email pivot to find hidden alias accounts), social graph, repo READMEs, Gists |
 | **Cross-platform identity** | Keybase, Hacker News, Reddit, npm/PyPI, Mastodon — linking pseudonymous accounts |
-| **Domain & infrastructure** | WHOIS (incl. pre-GDPR archives), hosting/VPS, Wayback Machine, reverse analytics |
-| **Credential hygiene** | Have I Been Pwned and similar breach checks (email only — never passwords) |
+| **Structured aggregators** | Keyless breach/paste lookups (Intelligence X, LeakCheck's public tier), alias discovery across 500+ sites (WhatsMyName, Social-Searcher) |
+| **Domain & infrastructure** | WHOIS (incl. pre-GDPR archives), IPInfo hosting/ASN lookup, Wayback Machine, reverse analytics |
+| **Credential hygiene** | Have I Been Pwned (manual pointer — no free API since 2019), LeakCheck public tier, Epieos (email only — never passwords) |
 | **UK public records** | Planning applications, Gazette, insolvency register, professional registers, charity trustees |
 | **Family / co-resident exposure** | Partners and family exposed via the same records |
-| **Attack surface** | Spear-phishing vectors built from every finding, with remediation |
+| **Attack surface & risk score** | Spear-phishing vectors built from every finding, weighted into a computed 0–100 risk score, with remediation |
 
 ## Key techniques
 
@@ -36,6 +37,10 @@ email → GitHub commit-email pivot → real/alias account → social graph
 ```
 
 Plus UK-specific playbooks (Companies House filing history for address trails, IDOX planning portals) and operational notes on tooling and known blockers (e.g. Reddit being inaccessible to automated fetchers, using the HN Algolia API rather than site-search).
+
+### Spear-phishing risk scoring
+
+Every finding gets tagged against six attack-vector categories (named-contact impersonation, business/regulatory, domain/infrastructure, developer tooling, family pivot, hobby communities), each with a fixed weight reflecting real-world success rate. The best finding in each category is scaled by how specific and corroborated it is, and the six category scores sum to a 0–100 risk score that drives the report's HIGH/MEDIUM/LOW banner — the report shows the full category breakdown, not just the label.
 
 ---
 
@@ -92,7 +97,7 @@ Claude will:
 
 A self-contained `footprint-report-<subject>.html` file with:
 
-- An overall risk banner (HIGH / MEDIUM / LOW)
+- An overall risk banner (HIGH / MEDIUM / LOW), backed by a computed 0–100 spear-phishing risk score and category breakdown
 - Per-category findings, each with the exact data found and a source link
 - An interactive identity/connection graph
 - A spear-phishing attack-vector section (why each finding matters)
@@ -107,7 +112,8 @@ A self-contained `footprint-report-<subject>.html` file with:
 - **UK-weighted.** The public-records playbooks (Companies House, Gazette, IDOX planning, electoral roll) are UK-specific. The developer, domain, breach, and social-platform techniques are global.
 - **Some sources need a real browser.** JavaScript-rendered portals (e.g. IDOX planning) and Reddit are flagged as "manual check required" rather than fetched automatically.
 - **`gh` CLI is optional.** If present, it's used only to raise GitHub's API rate limit — it queries the same public endpoints an anonymous user hits, and never the authenticated account's private view. Without it, the skill falls back to the public GitHub REST API and logged-out web view.
-- **No paid lookups are performed automatically.** Where a paid service (e.g. historical WHOIS, PimEyes) would go deeper, the skill notes it rather than spending money.
+- **No paid lookups are performed automatically.** Where a paid service (e.g. historical WHOIS, PimEyes, DeHashed) would go deeper, the skill notes it as an escalation option rather than spending money.
+- **Breach/alias aggregators are keyless-only.** LeakCheck, WhatsMyName, Social-Searcher, and IPInfo are queried only via their free, unauthenticated tiers. Free-tier endpoints change shape without notice, so the skill verifies each live response before trusting it and falls back to "manual check required" rather than guessing at a workaround.
 
 ## Ethics & scope
 
