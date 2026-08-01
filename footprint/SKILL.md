@@ -259,10 +259,11 @@ Search pattern: `"username" site:github.com`, `"username" site:stackoverflow.com
 - Use AnalyzeID to find other sites using the same Google Analytics ID
 
 ## G5 — Breach & Credential Checks
-- Have I Been Pwned: https://haveibeenpwned.com/ — check all known email addresses
-- LeakCheck: https://leakcheck.io/
-- DeHashed: https://dehashed.com/ (paid, searches breached data by email, username, domain)
+- Have I Been Pwned: https://haveibeenpwned.com/ — the free unauthenticated API was retired in 2019; treat as a **manual check pointer** in the report, not an automated fetch (see G13a for why)
+- LeakCheck: https://leakcheck.io/ — keyless public tier only, verify the live response shape first (see G13a)
+- DeHashed: https://dehashed.com/ (paid key required — list as an escalation option, do not call)
 - Note: Never ask the user to paste passwords. Only check email addresses.
+- See G13a for the exact keyless-endpoint mechanics and response-handling rules for all of the above.
 
 ## G6 — Phone Number (if known)
 - Truecaller: https://www.truecaller.com/
@@ -320,6 +321,38 @@ Run targeted site-specific searches:
 - npm: https://www.npmjs.com/~username
 - PyPI: https://pypi.org/user/username/
 - Docker Hub: https://hub.docker.com/u/username
+
+## G13 — Structured Alias & Breach Aggregators (passive, clearnet, keyless only)
+Broader-coverage versions of G2/G5, run as single structured queries rather than many manual site-by-site searches. Same anonymous-vantage and no-active-scanning rules apply — these are still just fetching public pages/endpoints, never probing infrastructure.
+
+### G13a — Credential / Breach Exposure
+- **Have I Been Pwned**: the free unauthenticated breach-by-email API was retired in 2019 — the v3 API now requires a paid key. Per the CONSTRAINTS above (never request/store API keys), do NOT attempt authenticated HIBP calls. Keep this as a "check manually at haveibeenpwned.com" pointer in the report, same as G5.
+- **LeakCheck public tier**: `leakcheck.io` has historically offered a limited, keyless public-check endpoint returning found/not-found + breach count (no raw record contents). Treat as a candidate `WebFetch`, but — LESSON: free-tier breach-lookup endpoints change shape and terms without notice — verify the live response before trusting it. This is the same kind of caution this skill already applies to unstable external specs elsewhere (see the vis-network SRI-hash note in FINAL OUTPUT). If it 404s, paywalls, or the response looks materially different from a simple found/count shape, stop and fall back to "manual check required" rather than guessing at a workaround.
+- **Intelligence X** (already in G1): keyless search UI, covers pastes/dumps — no change needed, already fits this pattern.
+- **Out of scope — do not call**: DeHashed, the full LeakCheck API, Constella Intelligence, SpyCloud, or any other service that requires a paid key or login. List these in the report as a "paid escalation option" only.
+
+### G13b — Social Footprint / Alias Discovery
+- **Social-Searcher**: https://www.social-searcher.com/ — public search UI, no login for basic queries, returns recent public mentions across X/Facebook/Instagram/YouTube/forums. Query it the same way G10 queries search engines: construct a search URL, `WebFetch` it, parse the visible results.
+- **WhatsMyName**: https://whatsmyname.app/ — maintained, keyless username-existence checker across 500+ sites via a public signature list. This only checks "does this public profile URL exist" — the same class of action as a human clicking the link, same as G2 — it broadens coverage in one pass rather than crossing into active scanning.
+
+**Handling responses from G13 sources:**
+- Extract only existence/count/date fields (breach name, breach date, found true/false, matched platform, profile URL). Never store or print full leaked record contents, raw dump/paste text, or anything resembling a password or hash — redact immediately if a response happens to include one.
+- An empty or ambiguous result means "not found," never "confirmed absent" — coverage is partial, so log it as a gap, not a clean bill of health.
+- If a result required getting past a paywall or CAPTCHA gate, it isn't a clean passive result — mark it "manual check required" instead of forcing it through.
+- Don't burn more than one retry on a source that fails or looks paywalled, same rule as Reddit/IDOX.
+
+## G14 — IP / Hosting Infrastructure Lookup
+IPInfo: https://ipinfo.io/
+How to search: Resolve the subject's domain(s) to an IP first — WebFetch a DNS-over-HTTPS lookup, e.g. `https://dns.google/resolve?name=domain.com&type=A` — then query `https://ipinfo.io/IP/json` (free tier, no login) for that address.
+
+What it exposes:
+- Hosting provider / ASN (e.g. AWS, DigitalOcean, Hetzner)
+- Organization name attached to the IP block
+- Rough geolocation of the server (datacenter location — NOT the subject's actual location, unless self-hosted from home)
+
+Caveat: if the domain sits behind Cloudflare or a similar CDN/proxy, the resolved IP belongs to the CDN, not the subject's origin server — say so explicitly in the report rather than misattributing the hosting provider.
+
+Feeds: Vector Category 4's "VPS billing alert" pretext — knowing the real hosting provider is what lets an attacker impersonate the right company in a renewal/billing phish (see EXAMPLE under Category 4).
 
 ════════════════════════════════════════
 THE DEVELOPER PIVOT CHAIN — CORE PLAYBOOK
@@ -557,7 +590,7 @@ Example shape: "[COMPANY NAME] LIMITED (No. [COMPANY NUMBER]) — annual account
 ### Category 2 — Named Contact Impersonation (highest credibility)
 Requirements: a named colleague with a confirmed professional relationship, their email domain, and enough context to match their writing style.
 
-Sources: LinkedIn recommendations (name, title, relationship context, writing tone), GitHub co-contributors, Keybase following list.
+Sources: LinkedIn recommendations (name, title, relationship context, writing tone), GitHub co-contributors, Keybase following list, G13b alias hits that corroborate a contact's identity across platforms.
 
 Attack flow:
 1. Identify a named contact (e.g. LinkedIn recommender, Keybase mutual, GitHub co-contributor)
@@ -585,12 +618,16 @@ The primary email (used in commits and domain registration) is also the recovery
 
 Best pretexts: registrar renewal (use real registrar name from WHOIS), VPS billing alert (use real provider name from IPInfo), "unusual login" for the email provider.
 
+Sources: WHOIS (UK3/G4) for registrar, G14 (IPInfo) for hosting provider/IP, G13a for confirmed breach exposure.
+
+Also feed in: any confirmed breach/credential exposure from G13a — a real breached or reused password is the concrete mechanism for a credential-stuffing or "reset your compromised account" pretext, and belongs in this category's scoring alongside the registrar/hosting angle.
+
 EXAMPLE: WHOIS reveals a subject's registrar and IPInfo reveals their hosting provider and server IP. An attacker then knows exactly which real companies to impersonate in a renewal or billing-alert phish.
 
 ### Category 5 — Hobby / Personal Community (lowest suspicion)
 Personal interest communities are trusted spaces. The subject's guard is down. Common attack: fake peer-to-peer sale or trade message, "photo album" link for goods, malicious "patch file" or "module preset" download.
 
-Sources: sole GitHub follows = strongest hobby signal (deliberate choice). Reddit/HN comment topics. Starred repos.
+Sources: sole GitHub follows = strongest hobby signal (deliberate choice). Reddit/HN comment topics. Starred repos. G13b (WhatsMyName/Social-Searcher) hits on hobby/community platforms.
 
 EXAMPLE: If a subject's sole GitHub follow reveals a specific expensive hobby (e.g. a niche hardware brand) and their account on a community platform is confirmed, a DM offering to sell sought-after gear from that brand — with a "photo album" credential-harvest link — is highly plausible and low-suspicion.
 
@@ -598,6 +635,40 @@ EXAMPLE: If a subject's sole GitHub follow reveals a specific expensive hobby (e
 If the subject has strong security hygiene, their partner may not. Family members exposed on the same Companies House record are a secondary attack surface with lower security awareness and the same legal obligations.
 
 EXAMPLE: A subject's partner listed as co-director/PSC is exposed on the same Companies House record — name, DOB, home address. An ECCTA "director identity verification" phishing letter to that person at the home address is highly credible and gives a second route into the company.
+
+## SPEAR-PHISHING RISK SCORE — SCORING MODULE
+Turn the tagged vectors above into one transparent, computed number instead of a gut-feel label. Do this as you tag each finding, not as a separate pass at the end.
+
+**Category weights** (fixed — reflect real-world success rate / blast radius, not this subject's specifics):
+
+| Category | Weight |
+|---|---|
+| 2 — Named Contact Impersonation | 25 |
+| 1 — Business / Regulatory | 20 |
+| 4 — Domain / Infrastructure (account takeover) | 20 |
+| 3 — Developer Tooling | 15 |
+| 6 — Co-resident / Family Pivot | 12 |
+| 5 — Hobby / Personal Community | 8 |
+
+Weights sum to 100 by design.
+
+**Evidence multiplier** — for every finding within a category, rate how usable it actually is for a pretext:
+- **1.0 — Confirmed + specific**: named person/company/project/domain the subject would recognise (e.g. a named colleague with a confirmed shared project, a real overdue filing with its company number).
+- **0.6 — Confirmed but generic**: the category applies and is real, but lacks a specific enough detail to make the pretext bite (e.g. "has a Companies House entry" with no overdue filing or named co-director).
+- **0.3 — Partial / inferred**: suspected or single-source, not cross-confirmed (e.g. a likely employer inferred from one PR, not corroborated on LinkedIn).
+- **0 — Not applicable**: no finding in this category for this subject.
+- **Corroboration bump**: if a G13b (alias/social) hit independently confirms a finding already surfaced elsewhere (e.g. a handle found via WhatsMyName/Social-Searcher also matches the GitHub or LinkedIn identity), raise that finding's multiplier one tier — 0.3→0.6 or 0.6→1.0, capped at 1.0. Cross-source agreement is what makes a pretext credible, so it should move the score.
+
+**Per-category score** = weight × (multiplier of the single BEST finding in that category). Take the best, not the sum — one strong named-contact pretext is what an attacker would actually use; extra mediocre findings in the same category don't compound the risk.
+
+**Overall score** = sum of the 6 per-category scores (0–100).
+
+**Score → banner rating:**
+- 70–100 → HIGH
+- 35–69 → MEDIUM
+- 0–34 → LOW
+
+Show your work: include a small breakdown table (category, best finding, multiplier, weighted score) in the report so the number is auditable, not a black box. This is what feeds the risk banner in FINAL OUTPUT and the category-11 summary in AUDIT CATEGORIES.
 
 ## ALWAYS INCLUDE IN THE REPORT
 For each attack vector, show:
@@ -615,12 +686,12 @@ AUDIT CATEGORIES & RISK FRAMEWORK
 3) Professional and social network footprint (per-platform review)
 4) Content and metadata footprint (posts, images, geotags, EXIF)
 5) Code and developer footprint (GitHub/GitLab/npm/PyPI/Gists)
-6) Credential hygiene and leaked passwords (HIBP, Epieos, password manager audit)
+6) Credential hygiene and leaked passwords (HIBP manual check, LeakCheck public tier, Epieos, password manager audit — see G5/G13a)
 7) Data brokers, aggregators, and public records (192.com, electoral roll, Land Registry)
 8) Domain and web infrastructure (WHOIS, Wayback, reverse analytics)
 9) UK-specific public records (planning, Gazette, insolvency, professional registers)
 10) Co-resident / family exposure (partner/family members exposed via same records)
-11) Spear phishing attack surface (always the final analytical section before action plan)
+11) Spear phishing attack surface, including the computed Spear-Phishing Risk Score and category breakdown (always the final analytical section before action plan — see SCORING MODULE)
 12) Ongoing monitoring and re-audit plan
 
 ════════════════════════════════════════
@@ -629,7 +700,7 @@ FINAL OUTPUT — HTML REPORT
 
 Always produce the final output as a styled HTML file saved to the current directory. Include:
 
-1) Overall risk rating banner (HIGH / MEDIUM / LOW) with one-sentence summary
+1) Overall risk rating banner (HIGH / MEDIUM / LOW) with one-sentence summary, backed by the computed Spear-Phishing Risk Score (0–100, see SCORING MODULE) — show the number and its category breakdown table next to the banner, not just the label
 2) Per-category findings with:
    - What was found (specific data, not vague summaries)
    - Risk rating (HIGH / MEDIUM / LOW / NONE)
@@ -693,7 +764,7 @@ When invoked:
 3. Anchor the identity first (Companies House name+town, or a known email/username) so you're auditing the right person — see IDENTITY ANCHORING.
 4. Run ALL searches in aggressive parallel — the full UK + global source list, and every deep-dive (SR) technique that could apply. Don't do them sequentially waiting for confirmation, and don't defer any to a hypothetical later run.
 5. If the subject is technical, run THE DEVELOPER PIVOT CHAIN end-to-end, feeding new emails/handles/colleagues back in until it stops producing new nodes.
-6. Complete the spear-phishing attack-surface analysis from the findings.
+6. Complete the spear-phishing attack-surface analysis from the findings, computing the Spear-Phishing Risk Score (category weight × best-evidence multiplier, summed — see SCORING MODULE) as you tag each vector, not as an afterthought.
 7. Present a single comprehensive HTML report at the end, saved to disk (filename: `footprint-report-<subject-slug>.html`).
 8. Then — and only as a courtesy — offer to zoom in on any one area or to set up periodic re-auditing for monitoring. The delivered report is already the full picture, not a teaser.
 
